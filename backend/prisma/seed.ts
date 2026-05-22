@@ -53,26 +53,35 @@ async function main() {
   await prisma.userRole.create({ data: { userId: adminUser.id, roleId: roleAdmin.id } });
 
   // ---------- Menus ----------
+  const menuDashboard = await prisma.menu.create({
+    data: { name: '仪表板', routeName: 'Dashboard', type: 0, path: '/dashboard', icon: 'lucide:layout-dashboard', sortOrder: 0, redirect: '/dashboard/analytics' },
+  });
+  const menuAnalytics = await prisma.menu.create({
+    data: { name: '分析页', routeName: 'Analytics', type: 1, parentId: menuDashboard.id, path: '/dashboard/analytics', component: '/dashboard/analytics/index', sortOrder: 1 },
+  });
+  const menuWorkspace = await prisma.menu.create({
+    data: { name: '工作台', routeName: 'Workspace', type: 1, parentId: menuDashboard.id, path: '/dashboard/workspace', component: '/dashboard/workspace/index', sortOrder: 2 },
+  });
   const menuSystem = await prisma.menu.create({
-    data: { name: '系统管理', type: 0, path: '/system', icon: 'lucide:settings', sortOrder: 1 },
+    data: { name: '系统管理', routeName: 'System', type: 0, path: '/system', icon: 'lucide:settings', sortOrder: 1, redirect: '/system/user' },
   });
   const menuUserMgmt = await prisma.menu.create({
-    data: { name: '用户管理', type: 1, parentId: menuSystem.id, path: '/system/user', component: '/system/user/index', sortOrder: 1 },
+    data: { name: '用户管理', routeName: 'SystemUser', type: 1, parentId: menuSystem.id, path: '/system/user', component: '/system/user/index', sortOrder: 1 },
   });
   const menuRoleMgmt = await prisma.menu.create({
-    data: { name: '角色管理', type: 1, parentId: menuSystem.id, path: '/system/role', component: '/system/role/index', sortOrder: 2 },
+    data: { name: '角色管理', routeName: 'SystemRole', type: 1, parentId: menuSystem.id, path: '/system/role', component: '/system/role/index', sortOrder: 2 },
   });
   const menuMenuMgmt = await prisma.menu.create({
-    data: { name: '菜单管理', type: 1, parentId: menuSystem.id, path: '/system/menu', component: '/system/menu/index', sortOrder: 3 },
+    data: { name: '菜单管理', routeName: 'SystemMenu', type: 1, parentId: menuSystem.id, path: '/system/menu', component: '/system/menu/index', sortOrder: 3 },
   });
   const menuDeptMgmt = await prisma.menu.create({
-    data: { name: '部门管理', type: 1, parentId: menuSystem.id, path: '/system/dept', component: '/system/dept/index', sortOrder: 4 },
+    data: { name: '部门管理', routeName: 'SystemDept', type: 1, parentId: menuSystem.id, path: '/system/dept', component: '/system/dept/index', sortOrder: 4 },
   });
   const menuOrderMgmt = await prisma.menu.create({
-    data: { name: '订单管理', type: 0, path: '/order', icon: 'lucide:shopping-cart', sortOrder: 2 },
+    data: { name: '订单管理', routeName: 'Order', type: 0, path: '/order', icon: 'lucide:shopping-cart', sortOrder: 2, redirect: '/order/list' },
   });
   const menuOrderList = await prisma.menu.create({
-    data: { name: '订单列表', type: 1, parentId: menuOrderMgmt.id, path: '/order/list', component: '/order/list/index', sortOrder: 1 },
+    data: { name: '订单列表', routeName: 'OrderList', type: 1, parentId: menuOrderMgmt.id, path: '/order/list', component: '/order/list/index', sortOrder: 1 },
   });
 
   // ---------- Permissions ----------
@@ -138,6 +147,20 @@ async function main() {
   await prisma.dataScope.create({
     data: { roleId: roleAdmin.id, scopeType: '4' }, // all data
   });
+
+  // ---------- Sample Orders ----------
+  const orderStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+  for (let i = 1; i <= 20; i++) {
+    await prisma.order.create({
+      data: {
+        orderNo: `ORD-2026${String(i).padStart(4, '0')}`,
+        userId: i % 3 === 0 ? adminUser.id : null,
+        totalAmount: (Math.random() * 10000).toFixed(2),
+        status: orderStatuses[i % 4],
+        remark: i % 5 === 0 ? `测试订单 #${i}` : null,
+      },
+    });
+  }
 
   console.log('Seed completed successfully!');
   console.log(`Admin user: admin / admin123`);

@@ -6,8 +6,10 @@ import { ConfigModule } from './common/config.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { PrismaModule } from './common/prisma.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { MenusModule } from './menus/menus.module';
+import { OrdersModule } from './orders/orders.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
@@ -23,6 +25,8 @@ import { UsersModule } from './users/users.module';
     PermissionsModule,
     DepartmentsModule,
     AccessControlModule,
+    OrdersModule,
+    DashboardModule,
   ],
   providers: [
     {

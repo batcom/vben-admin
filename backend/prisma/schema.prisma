@@ -69,9 +69,11 @@ model Menu {
   id        Int      @id @default(autoincrement())
   parentId  Int?     @map("parent_id")
   name      String   @db.VarChar(100)
+  routeName String?  @map("route_name") @db.VarChar(100)
   type      Int      @default(0) // 0=directory 1=menu 2=button
   path      String?  @db.VarChar(200)
   component String?  @db.VarChar(200)
+  redirect  String?  @db.VarChar(200)
   icon      String?  @db.VarChar(100)
   sortOrder Int      @default(0) @map("sort_order")
   perms     String?  @db.VarChar(100) // button permission code

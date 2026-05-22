@@ -6,6 +6,7 @@ import {
   Req,
   Res,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
@@ -48,9 +49,11 @@ export class AuthController {
   async refresh(@Req() req: any) {
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
-      return { code: 400, data: null, message: 'Refresh token required' };
+      throw new UnauthorizedException('Refresh token required');
     }
-    return this.authService.refresh(refreshToken);
+    const tokens = await this.authService.refresh(refreshToken);
+    // Frontend expects just the access token string as the response data
+    return tokens.accessToken;
   }
 
   @Public()
