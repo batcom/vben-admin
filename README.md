@@ -94,6 +94,23 @@ git cherry-pick <commit-hash>
 | `frontend/apps/web-antd/.env.development` | `VITE_NITRO_MOCK=false` |
 | `frontend/pnpm-workspace.yaml` | 添加 `../backend` 到工作区 |
 
+## Docker 部署
+
+```bash
+# 一键启动（PostgreSQL + 后端 + 前端）
+docker compose up -d --build
+
+# 初始化数据库
+docker compose exec backend npx prisma migrate deploy
+docker compose exec backend npx prisma db seed
+
+# 访问
+# 前端: http://localhost
+# 后端 API: http://localhost/api
+```
+
+生产环境请修改 `docker-compose.yml` 中的 JWT 密码和数据库密码。
+
 ## Git 远程配置
 
 ```bash

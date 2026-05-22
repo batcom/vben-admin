@@ -83,6 +83,9 @@ async function main() {
   const menuOrderList = await prisma.menu.create({
     data: { name: '订单列表', routeName: 'OrderList', type: 1, parentId: menuOrderMgmt.id, path: '/order/list', component: '/order/list/index', sortOrder: 1 },
   });
+  const menuGenerator = await prisma.menu.create({
+    data: { name: '代码生成', routeName: 'Generator', type: 1, parentId: menuSystem.id, path: '/system/generator', component: '/system/generator/index', icon: 'lucide:code', sortOrder: 5 },
+  });
 
   // ---------- Permissions ----------
   const perms = [
@@ -125,6 +128,8 @@ async function main() {
     { name: '订单编辑', code: 'order:update', menuId: menuOrderList.id },
     { name: '订单删除', code: 'order:delete', menuId: menuOrderList.id },
     { name: '订单导出', code: 'order:export', menuId: menuOrderList.id },
+    { name: '代码生成查询', code: 'generator:list', menuId: menuGenerator.id },
+    { name: '代码生成执行', code: 'generator:generate', menuId: menuGenerator.id },
   ];
 
   const createdPerms = [];
