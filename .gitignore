@@ -1,0 +1,30 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+.DS_Store
+Thumbs.db
+
+.idea/
+.vscode/
+*.swp
+*.swo
+
+coverage/
+.nyc_output/
+
+*.tsbuildinfo
+
+# Prisma
+backend/prisma/migrations/
+
+# Generated
+backend/src/generated/
+.claude/
+graphify-out/
