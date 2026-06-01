@@ -6,29 +6,31 @@ import { ConfigModule } from './common/config.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionGuard } from './common/guards/permission.guard';
 import { PrismaModule } from './common/prisma.module';
+import { CrudModule } from './crud/crud.module';
 import { DashboardModule } from './dashboard/dashboard.module';
-import { DepartmentsModule } from './departments/departments.module';
 import { GeneratorModule } from './generator/generator.module';
-import { MenusModule } from './menus/menus.module';
 import { OrdersModule } from './orders/orders.module';
-import { PermissionsModule } from './permissions/permissions.module';
-import { RolesModule } from './roles/roles.module';
-import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
     AuthModule,
-    UsersModule,
-    MenusModule,
-    RolesModule,
-    PermissionsModule,
-    DepartmentsModule,
-    AccessControlModule,
-    OrdersModule,
     DashboardModule,
     GeneratorModule,
+    OrdersModule,
+    AccessControlModule,
+    CrudModule.forRoot({
+      apps: [
+        {
+          name: 'admin',
+          prefix: 'admin',
+          guard: JwtAuthGuard,
+          entities: {},
+          autoScan: true,
+        },
+      ],
+    }),
   ],
   providers: [
     {

@@ -11,5 +11,15 @@
     "title": "Dashboard",
     "analytics": "Analytics",
     "workspace": "Workspace"
+  },
+  "preferences": {
+    "antd": {
+      "fields": {
+        "showDemos": {
+          "label": "Show Demo Pages",
+          "tip": "Display demo and example pages in the menu"
+        }
+      }
+    }
   }
 }

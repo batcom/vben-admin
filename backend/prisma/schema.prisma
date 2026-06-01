@@ -238,3 +238,20 @@ model Order {
 
   @@map("sys_order")
 }
+
+// ==================== Article / CMS ====================
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(200)
+  content   String   @db.Text
+  summary   String?  @db.VarChar(500)
+  coverUrl  String?  @map("cover_url") @db.VarChar(500)
+  tags      String?  @db.VarChar(200)
+  status    String   @default("draft") // draft | published | archived
+  publishedAt DateTime? @map("published_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("cms_article")
+}

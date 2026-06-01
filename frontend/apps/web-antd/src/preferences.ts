@@ -7,6 +7,7 @@ interface WebAntdPreferencesExtension {
   defaultTableSize: number;
   enableFormFullscreen: boolean;
   reportTitle: string;
+  showDemos: boolean;
   tenantMode: 'multi' | 'single';
 }
 
@@ -19,6 +20,10 @@ export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+    accessMode: 'mixed',
+    defaultHomePath: '/dashboard/analytics',
+    enableRefreshToken: true,
+    loginExpiredMode: 'modal',
   },
 });
 
@@ -67,6 +72,13 @@ export const preferencesExtension =
         key: 'reportTitle',
         label: 'preferences.antd.fields.reportTitle.label',
         placeholder: 'preferences.antd.fields.reportTitle.placeholder',
+      },
+      {
+        component: 'switch',
+        defaultValue: true,
+        key: 'showDemos',
+        label: 'preferences.antd.fields.showDemos.label',
+        tip: 'preferences.antd.fields.showDemos.tip',
       },
     ],
   });

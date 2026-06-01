@@ -25,12 +25,11 @@ export class IntrospectionService {
       table_name: string;
       table_comment: string;
     }>>`
-      SELECT c.table_name, obj_description(c.table_name::regclass) as table_comment
-      FROM information_schema.columns c
-      WHERE c.table_schema = 'public'
-        AND c.table_type = 'BASE TABLE'
-      GROUP BY c.table_name
-      ORDER BY c.table_name
+      SELECT t.table_name, obj_description(t.table_name::regclass) as table_comment
+      FROM information_schema.tables t
+      WHERE t.table_schema = 'public'
+        AND t.table_type = 'BASE TABLE'
+      ORDER BY t.table_name
     `;
 
     return result.map((r) => ({
@@ -53,14 +52,9 @@ export class IntrospectionService {
         c.data_type,
         c.is_nullable,
         c.column_default,
-        col_description(ord.table_name::regclass, ord.ordinal_position) as col_description,
+        col_description(c.table_name::regclass, c.ordinal_position) as col_description,
         c.character_maximum_length
       FROM information_schema.columns c
-      JOIN (
-        SELECT table_name, ordinal_position
-        FROM information_schema.columns
-        WHERE table_name = ${tableName} AND table_schema = 'public'
-      ) ord ON c.column_name = ord.column_name AND c.ordinal_position = ord.ordinal_position
       WHERE c.table_name = ${tableName} AND c.table_schema = 'public'
       ORDER BY c.ordinal_position
     `;

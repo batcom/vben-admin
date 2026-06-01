@@ -28,15 +28,37 @@ async function main() {
   const deptSales = await prisma.dept.create({ data: { name: '销售部', parentId: deptRoot.id, sortOrder: 2 } });
 
   // ---------- Admin User ----------
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  const defaultPassword = await bcrypt.hash('123456', 10);
   const adminUser = await prisma.user.create({
     data: {
       username: 'admin',
-      password: hashedPassword,
+      password: defaultPassword,
       realName: '系统管理员',
       email: 'admin@example.com',
       phone: '13800000000',
       deptId: deptDev.id,
+      status: 1,
+    },
+  });
+  const vbenUser = await prisma.user.create({
+    data: {
+      username: 'vben',
+      password: defaultPassword,
+      realName: '超级管理员',
+      email: 'vben@example.com',
+      phone: '13800000001',
+      deptId: deptRoot.id,
+      status: 1,
+    },
+  });
+  const jackUser = await prisma.user.create({
+    data: {
+      username: 'jack',
+      password: defaultPassword,
+      realName: '普通用户',
+      email: 'jack@example.com',
+      phone: '13800000002',
+      deptId: deptSales.id,
       status: 1,
     },
   });
@@ -51,6 +73,8 @@ async function main() {
 
   // Assign admin role
   await prisma.userRole.create({ data: { userId: adminUser.id, roleId: roleAdmin.id } });
+  await prisma.userRole.create({ data: { userId: vbenUser.id, roleId: roleAdmin.id } });
+  await prisma.userRole.create({ data: { userId: jackUser.id, roleId: roleUser.id } });
 
   // ---------- Menus ----------
   const menuDashboard = await prisma.menu.create({
@@ -142,15 +166,30 @@ async function main() {
     await prisma.rolePermission.create({ data: { roleId: roleAdmin.id, permissionId: p.id } });
   }
 
+  // Assign limited permissions to user role
+  const userRolePerms = createdPerms.filter(p => ['order:list', 'order:query'].includes(p.code));
+  for (const p of userRolePerms) {
+    await prisma.rolePermission.create({ data: { roleId: roleUser.id, permissionId: p.id } });
+  }
+
   // Assign admin menus
   const allMenus = await prisma.menu.findMany();
   for (const m of allMenus) {
     await prisma.roleMenu.create({ data: { roleId: roleAdmin.id, menuId: m.id } });
   }
 
+  // Assign dashboard + order menus to user role
+  const userMenus = allMenus.filter(m => m.path?.startsWith('/dashboard') || m.path?.startsWith('/order'));
+  for (const m of userMenus) {
+    await prisma.roleMenu.create({ data: { roleId: roleUser.id, menuId: m.id } });
+  }
+
   // ---------- Data Scope ----------
   await prisma.dataScope.create({
     data: { roleId: roleAdmin.id, scopeType: '4' }, // all data
+  });
+  await prisma.dataScope.create({
+    data: { roleId: roleUser.id, scopeType: '1' }, // self only
   });
 
   // ---------- Sample Orders ----------
@@ -168,7 +207,20 @@ async function main() {
   }
 
   console.log('Seed completed successfully!');
-  console.log(`Admin user: admin / admin123`);
+  console.log('Accounts: vben/123456, admin/123456, jack/123456');
+
+  // ---------- Articles ----------
+
+  const articles = [
+    { title: 'Vue 3 组合式 API 入门', content: '<p>Vue 3 的组合式 API 提供了一种更灵活的方式来组织组件逻辑...</p>', summary: '全面了解 Vue 3 Composition API 的核心概念', status: 'published', publishedAt: new Date('2026-05-15'), tags: 'Vue,前端' },
+    { title: 'NestJS 后端开发实践', content: '<p>NestJS 是一个用于构建高效、可扩展的 Node.js 服务端应用框架...</p>', summary: '使用 NestJS 构建企业级后端应用的最佳实践', status: 'published', publishedAt: new Date('2026-05-18'), tags: 'NestJS,后端' },
+    { title: 'TypeScript 类型体操进阶', content: '<p>TypeScript 的类型系统非常强大，掌握高级类型可以写出更安全的代码...</p>', summary: '深入 TypeScript 高级类型与模式匹配', status: 'draft', tags: 'TypeScript' },
+  ];
+
+  for (const a of articles) {
+    await prisma.article.create({ data: a });
+  }
+  console.log(`Seeded ${articles.length} articles`);
 }
 
 main()

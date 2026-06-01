@@ -1,43 +1,100 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { Page, useVbenModal } from '@vben/common-ui';
 
-const loading = ref(false);
-const dataSource = ref<any[]>([]);
+import { Button, message } from 'ant-design-vue';
 
-async function loadData() {
-  loading.value = true;
-  try {
-    const token = localStorage.getItem('accessToken') || '';
-    const res = await fetch('/api/menu', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const json = await res.json();
-    dataSource.value = json.data || [];
-  } finally {
-    loading.value = false;
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+
+import { deleteMenuApi, getMenuListApi } from '#/api/core';
+import { useCrudSchema } from '#/composables/use-crud-schema';
+import { menuFields } from './data';
+import MenuModal from './modal.vue';
+import ListToolbar from '#/components/common/list-toolbar.vue';
+
+const { searchSchema, tableColumns } = useCrudSchema(menuFields);
+
+const [MenuFormModal, modalApi] = useVbenModal({
+  connectedComponent: MenuModal,
+});
+
+const [Grid, gridApi] = useVbenVxeGrid({
+  gridOptions: {
+    columns: [
+      ...tableColumns.value,
+      {
+        field: 'action',
+        title: '操作',
+        width: 200,
+        fixed: 'right',
+        cellRender: {
+          name: 'CellOperation',
+          attrs: {
+            onClick: ({ code, row }: any) => {
+              if (code === 'append') handleCreate(row.id);
+              if (code === 'edit') handleEdit(row);
+              if (code === 'delete') handleDelete(row);
+            },
+          },
+          options: [
+            { code: 'append', text: '新增子菜单' },
+            'edit',
+            'delete',
+          ],
+        },
+      },
+    ],
+    proxyConfig: {
+      ajax: {
+        query: async () => {
+          const formValues = gridApi.formApi.getValues();
+          return await getMenuListApi(formValues);
+        },
+      },
+    },
+    treeConfig: { parentField: 'parentId', rowField: 'id', transform: true },
+  },
+  formOptions: {
+    schema: [
+      { fieldName: 'keyword', label: '关键词', component: 'Input', componentProps: { placeholder: '菜单名称' } },
+      ...searchSchema.value.filter(Boolean) as any,
+    ],
+  },
+});
+
+function handleCreate(parentId?: number) {
+  modalApi.open();
+  if (parentId !== undefined) {
+    modalApi.setData({ parentId });
   }
 }
 
-onMounted(loadData);
+async function handleEdit(record: any) {
+  modalApi.open();
+  modalApi.setData({ record, isEdit: true });
+}
+
+async function handleDelete(record: any) {
+  await deleteMenuApi(record.id);
+  message.success('删除成功');
+  gridApi.query();
+}
 </script>
 
 <template>
-  <div class="p-4">
-    <a-card title="菜单管理">
-      <a-table
-        :columns="[
-          { title: 'ID', dataIndex: 'id' },
-          { title: '名称', dataIndex: 'name' },
-          { title: '路径', dataIndex: 'path' },
-          { title: '类型', dataIndex: 'type' },
-          { title: '排序', dataIndex: 'sortOrder' },
-          { title: '状态', dataIndex: 'status' },
-        ]"
-        :data-source="dataSource"
-        :loading="loading"
-        row-key="id"
-        :pagination="false"
-      />
-    </a-card>
-  </div>
+  <Page auto-content-height>
+    <Grid table-title="菜单管理">
+      <template #toolbar-actions>
+        <ListToolbar
+          position="left"
+          :show-add="false"
+          :show-refresh="true"
+          :batch-actions="[]"
+          @refresh="gridApi.reload()"
+        >
+          <Button type="primary" @click="handleCreate()">新增菜单</Button>
+        </ListToolbar>
+      </template>
+    </Grid>
+    <MenuFormModal @success="gridApi.query()" />
+  </Page>
 </template>

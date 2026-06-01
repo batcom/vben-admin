@@ -28,3 +28,4 @@ backend/prisma/migrations/
 backend/src/generated/
 .claude/
 graphify-out/
+.gstack/

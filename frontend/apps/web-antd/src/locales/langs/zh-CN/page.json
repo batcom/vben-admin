@@ -11,5 +11,15 @@
     "title": "概览",
     "analytics": "分析页",
     "workspace": "工作台"
+  },
+  "preferences": {
+    "antd": {
+      "fields": {
+        "showDemos": {
+          "label": "显示示例页面",
+          "tip": "在菜单中显示演示和示例页面"
+        }
+      }
+    }
   }
 }

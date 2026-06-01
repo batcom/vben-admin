@@ -22,7 +22,11 @@ export namespace AuthApi {
  * 登录
  */
 export async function loginApi(data: AuthApi.LoginParams) {
-  return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+  const { username, password } = data;
+  return requestClient.post<AuthApi.LoginResult>('/auth/login', {
+    username,
+    password,
+  });
 }
 
 /**

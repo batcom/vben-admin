@@ -126,3 +126,18 @@ git remote -v
 ```bash
 git push -u origin main
 ```
+
+## 踩坑记录
+
+### Prisma 修改 schema 后未同步 TypeScript 类型
+
+**现象**: 修改 `backend/prisma/schema.prisma` 后，启动后端报 `Property 'xxx' does not exist on type 'PrismaService'`。
+
+**原因**: Prisma Client 的类型声明需要手动重新生成，不会在 `pnpm start:dev` 时自动同步。
+
+**解决**: 修改 schema 后执行：
+
+```bash
+cd backend
+npx prisma generate
+```

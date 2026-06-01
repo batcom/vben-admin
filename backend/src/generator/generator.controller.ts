@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   Body,
+  BadRequestException,
   Controller,
   Get,
   Param,
@@ -41,6 +42,9 @@ export class GeneratorController {
       apiPrefix: string;
     },
   ) {
+    if (!body.tableName || !body.moduleName || !body.modulePath || !body.apiPrefix) {
+      throw new BadRequestException('tableName, moduleName, modulePath, apiPrefix are required');
+    }
     const columns = await this.introspectionService.getColumns(body.tableName);
     const config = { ...body, columns };
 
@@ -61,6 +65,9 @@ export class GeneratorController {
       apiPrefix: string;
     },
   ) {
+    if (!body.tableName || !body.moduleName || !body.modulePath || !body.apiPrefix) {
+      throw new BadRequestException('tableName, moduleName, modulePath, apiPrefix are required');
+    }
     const columns = await this.introspectionService.getColumns(body.tableName);
     const config = { ...body, columns };
 

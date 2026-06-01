@@ -1,203 +1,254 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
+import { Page, useVbenModal } from '@vben/common-ui';
 
-const apiBase = '/api';
+import { Button, message } from 'ant-design-vue';
 
-interface TableInfo {
-  tableName: string;
-  tableComment: string;
-}
+import { ref, computed, onMounted } from 'vue';
 
-interface ColumnInfo {
-  columnName: string;
-  dataType: string;
-  isNullable: boolean;
-  columnComment: string;
-  isPrimaryKey: boolean;
-}
+import type { GeneratorApi } from '#/api/core';
 
-interface GenerateForm {
-  tableName: string;
-  moduleName: string;
-  modulePath: string;
-  apiPrefix: string;
-}
+import {
+  getTablesApi,
+  getTableColumnsApi,
+  previewCodeApi,
+  generateCodeApi,
+} from '#/api/core';
 
-const tables = ref<TableInfo[]>([]);
-const selectedTable = ref('');
-const columns = ref<ColumnInfo[]>([]);
-const loading = ref(false);
-const generating = ref(false);
-const previewVisible = ref(false);
-const previewCode = ref<Record<string, Record<string, string>>>({});
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+
+// ── Preview modal ──
 const activeTab = ref('backend');
-
-const form = ref<GenerateForm>({
-  tableName: '',
-  moduleName: '',
-  modulePath: '',
-  apiPrefix: '',
+const previewCode = ref<GeneratorApi.GeneratePreview>({
+  backend: {},
+  frontend: {},
 });
 
+const backendFiles = computed(
+  () => Object.keys(previewCode.value.backend || {}),
+);
+const frontendFiles = computed(
+  () => Object.keys(previewCode.value.frontend || {}),
+);
+
+function getCodeContent(filename: string): string {
+  const section =
+    previewCode.value[activeTab.value as keyof GeneratorApi.GeneratePreview];
+  return section?.[filename] || '';
+}
+
+const [PreviewModal, previewModalApi] = useVbenModal({
+  title: '代码预览',
+  fullscreenButton: true,
+  footer: false,
+});
+
+// ── Main grid with config form ──
+const generating = ref(false);
+
+const [Grid, gridApi] = useVbenVxeGrid({
+  gridOptions: {
+    columns: [
+      { field: 'columnName', title: '字段名', width: 180 },
+      { field: 'dataType', title: '类型', width: 200 },
+      {
+        field: 'isNullable',
+        title: '可空',
+        width: 80,
+        cellRender: {
+          name: 'CellTag',
+          props: ({ row }: any) => ({
+            color: row.isNullable ? 'orange' : 'green',
+            text: row.isNullable ? '是' : '否',
+          }),
+        },
+      },
+      { field: 'columnDefault', title: '默认值', width: 140 },
+      { field: 'columnComment', title: '注释', minWidth: 160 },
+      {
+        field: 'isPrimaryKey',
+        title: '主键',
+        width: 80,
+        cellRender: {
+          name: 'CellTag',
+          props: ({ row }: any) => ({
+            color: row.isPrimaryKey ? 'blue' : 'default',
+            text: row.isPrimaryKey ? '是' : '否',
+          }),
+        },
+      },
+    ],
+    data: [],
+    pagerConfig: { enabled: false },
+    proxyConfig: {
+      ajax: {
+        query: async () => {
+          const formValues = await gridApi.formApi.getValues();
+          if (!formValues.tableName) return [];
+          try {
+            return await getTableColumnsApi(formValues.tableName as string);
+          } catch {
+            return [];
+          }
+        },
+      },
+    },
+  },
+  formOptions: {
+    schema: [
+      {
+        fieldName: 'tableName',
+        label: '选择表',
+        component: 'Select',
+        componentProps: {
+          placeholder: '请选择数据库表',
+          showSearch: true,
+          filterOption: (input: string, option: any) =>
+            option.label?.toLowerCase().includes(input.toLowerCase()),
+          onChange: (value: string) => onTableSelect(value),
+        },
+      },
+      {
+        fieldName: 'moduleName',
+        label: '模块名',
+        component: 'Input',
+        componentProps: { placeholder: '如: ProductCategory' },
+      },
+      {
+        fieldName: 'modulePath',
+        label: '模块路径',
+        component: 'Input',
+        componentProps: { placeholder: '如: product/category' },
+      },
+      {
+        fieldName: 'apiPrefix',
+        label: 'API前缀',
+        component: 'Input',
+        componentProps: { placeholder: '如: product-categories' },
+      },
+    ],
+    showCollapseButton: false,
+    commonConfig: {
+      labelWidth: 80,
+    },
+  },
+  tableTitle: '表字段信息',
+});
+
+// ── Data loading ──
+const tableLoading = ref(false);
+
 async function loadTables() {
-  loading.value = true;
+  tableLoading.value = true;
   try {
-    const res = await fetch(`${apiBase}/generator/tables`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}` },
-    });
-    const json = await res.json();
-    tables.value = json.data || [];
+    const tables = await getTablesApi();
+    const options = tables.map((t) => ({
+      label: t.tableComment
+        ? `${t.tableName} (${t.tableComment})`
+        : t.tableName,
+      value: t.tableName,
+    }));
+    gridApi.formApi.updateSchema([
+      {
+        fieldName: 'tableName',
+        componentProps: { options },
+      },
+    ]);
   } finally {
-    loading.value = false;
+    tableLoading.value = false;
   }
 }
 
 async function onTableSelect(tableName: string) {
-  form.value.tableName = tableName;
-  const parts = tableName.replace(/^sys_/, '').split('_');
-  const moduleName = parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join('');
-  form.value.moduleName = moduleName;
-  form.value.modulePath = parts.join('-');
-  form.value.apiPrefix = parts.join('-');
-
-  const res = await fetch(`${apiBase}/generator/tables/${tableName}/columns`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}` },
+  if (!tableName) return;
+  const parts = tableName
+    .replace(/^sys_/, '')
+    .split('_')
+    .filter(Boolean);
+  gridApi.formApi.setValues({
+    tableName,
+    moduleName: parts
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(''),
+    modulePath: parts.join('-'),
+    apiPrefix: parts.join('-'),
   });
-  const json = await res.json();
-  columns.value = json.data || [];
+  gridApi.query();
 }
 
 async function handlePreview() {
+  const values = await gridApi.formApi.getValues();
+  if (
+    !values.tableName ||
+    !values.moduleName ||
+    !values.modulePath ||
+    !values.apiPrefix
+  ) {
+    message.warning('请先选择表并填写配置信息');
+    return;
+  }
   generating.value = true;
   try {
-    const res = await fetch(`${apiBase}/generator/preview`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
-      },
-      body: JSON.stringify(form.value),
-    });
-    const json = await res.json();
-    previewCode.value = json.data || {};
-    previewVisible.value = true;
+    previewCode.value = await previewCodeApi(
+      values as unknown as GeneratorApi.GenerateParams,
+    );
+    previewModalApi.open();
+  } catch {
+    message.error('预览失败，请检查配置');
   } finally {
     generating.value = false;
   }
 }
 
 async function handleGenerate() {
+  const values = await gridApi.formApi.getValues();
+  if (
+    !values.tableName ||
+    !values.moduleName ||
+    !values.modulePath ||
+    !values.apiPrefix
+  ) {
+    message.warning('请先选择表并填写配置信息');
+    return;
+  }
   generating.value = true;
   try {
-    const res = await fetch(`${apiBase}/generator/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('accessToken') || ''}`,
-      },
-      body: JSON.stringify(form.value),
-    });
-    const json = await res.json();
-    if (json.code === 0) {
-      message.success('代码生成成功');
-    } else {
-      message.error(json.message || '生成失败');
-    }
+    await generateCodeApi(
+      values as unknown as GeneratorApi.GenerateParams,
+    );
+    message.success('代码生成成功');
+  } catch {
+    message.error('生成失败，请检查配置');
   } finally {
     generating.value = false;
   }
-}
-
-function getCodeContent(filename: string): string {
-  const section = previewCode.value[activeTab.value];
-  return section?.[filename] || '';
-}
-
-const backendFiles = ref<string[]>([]);
-const frontendFiles = ref<string[]>([]);
-
-function updateFileLists() {
-  backendFiles.value = Object.keys(previewCode.value.backend || {});
-  frontendFiles.value = Object.keys(previewCode.value.frontend || {});
 }
 
 onMounted(loadTables);
 </script>
 
 <template>
-  <div class="p-4">
-    <a-card title="代码生成器" class="mb-4">
-      <a-form layout="inline">
-        <a-form-item label="选择表">
-          <a-select
-            v-model:value="selectedTable"
-            style="width: 250px"
-            placeholder="请选择数据库表"
-            :loading="loading"
-            @change="onTableSelect"
-          >
-            <a-select-option
-              v-for="t in tables"
-              :key="t.tableName"
-              :value="t.tableName"
-            >
-              {{ t.tableName }}
-              <span v-if="t.tableComment" style="color: #999; margin-left: 8px">
-                ({{ t.tableComment }})
-              </span>
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="模块名">
-          <a-input v-model:value="form.moduleName" placeholder="模块名称" />
-        </a-form-item>
-        <a-form-item label="模块路径">
-          <a-input v-model:value="form.modulePath" placeholder="如: product/category" />
-        </a-form-item>
-        <a-form-item label="API前缀">
-          <a-input v-model:value="form.apiPrefix" placeholder="如: product-categories" />
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" :loading="generating" @click="handlePreview">
-            预览代码
-          </a-button>
-          <a-button
-            type="primary"
-            danger
-            :loading="generating"
-            style="margin-left: 8px"
-            @click="handleGenerate"
-          >
-            生成代码
-          </a-button>
-        </a-form-item>
-      </a-form>
-    </a-card>
+  <Page auto-content-height>
+    <Grid table-title="代码生成器">
+      <template #toolbar-actions>
+        <Button
+          type="primary"
+          :loading="generating"
+          @click="handlePreview"
+        >
+          预览代码
+        </Button>
+        <Button
+          type="primary"
+          danger
+          :loading="generating"
+          @click="handleGenerate"
+        >
+          生成代码
+        </Button>
+      </template>
+    </Grid>
 
-    <a-card v-if="columns.length > 0" title="表字段信息" class="mb-4">
-      <a-table
-        :columns="[
-          { title: '字段名', dataIndex: 'columnName' },
-          { title: '类型', dataIndex: 'dataType' },
-          { title: '可空', dataIndex: 'isNullable', customRender: ({ text }) => text ? '是' : '否' },
-          { title: '注释', dataIndex: 'columnComment' },
-          { title: '主键', dataIndex: 'isPrimaryKey', customRender: ({ text }) => text ? '是' : '否' },
-        ]"
-        :data-source="columns"
-        :pagination="false"
-        row-key="columnName"
-        size="small"
-      />
-    </a-card>
-
-    <a-modal
-      v-model:open="previewVisible"
-      title="代码预览"
-      width="80%"
-      :footer="null"
-      @after-open-change="updateFileLists"
-    >
+    <PreviewModal>
       <a-tabs v-model:activeKey="activeTab">
         <a-tab-pane key="backend" tab="后端代码">
           <a-tabs>
@@ -206,7 +257,19 @@ onMounted(loadTables);
               :key="file"
               :tab="file"
             >
-              <pre style="max-height: 500px; overflow: auto; background: #f5f5f5; padding: 12px; border-radius: 4px; font-size: 12px;">{{ getCodeContent(file) }}</pre>
+              <pre
+                style="
+                  max-height: 500px;
+                  overflow: auto;
+                  background: #1e1e1e;
+                  color: #d4d4d4;
+                  padding: 16px;
+                  border-radius: 6px;
+                  font-size: 13px;
+                  line-height: 1.5;
+                  margin: 0;
+                "
+              >{{ getCodeContent(file) }}</pre>
             </a-tab-pane>
           </a-tabs>
         </a-tab-pane>
@@ -217,11 +280,23 @@ onMounted(loadTables);
               :key="file"
               :tab="file"
             >
-              <pre style="max-height: 500px; overflow: auto; background: #f5f5f5; padding: 12px; border-radius: 4px; font-size: 12px;">{{ getCodeContent(file) }}</pre>
+              <pre
+                style="
+                  max-height: 500px;
+                  overflow: auto;
+                  background: #1e1e1e;
+                  color: #d4d4d4;
+                  padding: 16px;
+                  border-radius: 6px;
+                  font-size: 13px;
+                  line-height: 1.5;
+                  margin: 0;
+                "
+              >{{ getCodeContent(file) }}</pre>
             </a-tab-pane>
           </a-tabs>
         </a-tab-pane>
       </a-tabs>
-    </a-modal>
-  </div>
+    </PreviewModal>
+  </Page>
 </template>
