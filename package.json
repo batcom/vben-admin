@@ -1,0 +1,20 @@
+{
+  "name": "vben-admin",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"pnpm --prefix backend dev\" \"npx --yes pnpm@10 --prefix frontend --filter @vben/web-antd run dev\"",
+    "dev:backend": "pnpm --prefix backend dev",
+    "dev:frontend": "npx --yes pnpm@10 --prefix frontend dev",
+    "dev:antd": "npx --yes pnpm@10 --prefix frontend --filter @vben/web-antd run dev",
+    "dev:naive": "npx --yes pnpm@10 --prefix frontend --filter @vben/web-naive run dev",
+    "dev:ele": "npx --yes pnpm@10 --prefix frontend --filter @vben/web-ele run dev",
+    "dev:tdesign": "npx --yes pnpm@10 --prefix frontend --filter @vben/web-tdesign run dev",
+    "build": "concurrently \"pnpm --prefix backend build\" \"npx --yes pnpm@10 --prefix frontend build\"",
+    "install:all": "pnpm --prefix backend install && npx --yes pnpm@10 --prefix frontend install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

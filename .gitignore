@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# Root monorepo orchestrator
+/package-lock.json
+
 .env
 .env.local
 .env.*.local
