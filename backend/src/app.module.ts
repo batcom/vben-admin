@@ -10,6 +10,7 @@ import { CrudModule } from './crud/crud.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GeneratorModule } from './generator/generator.module';
 import { OrdersModule } from './orders/orders.module';
+import { SiteConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrdersModule } from './orders/orders.module';
     DashboardModule,
     GeneratorModule,
     OrdersModule,
+    SiteConfigModule,
     AccessControlModule,
     CrudModule.forRoot({
       apps: [

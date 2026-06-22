@@ -15,6 +15,7 @@ export default defineConfig(async () => {
           '/orders': { changeOrigin: true, target: 'http://localhost:3002' },
           '/access-control': { changeOrigin: true, target: 'http://localhost:3002' },
           '/public': { changeOrigin: true, target: 'http://localhost:3002' },
+          '/config': { changeOrigin: true, target: 'http://localhost:3002' },
         },
       },
     },

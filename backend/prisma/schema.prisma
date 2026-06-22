@@ -7,202 +7,179 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== Auth & Users ====================
-
 model User {
-  id        Int       @id @default(autoincrement())
-  username  String    @unique @db.VarChar(50)
-  password  String    @db.VarChar(255)
-  realName  String?   @map("real_name") @db.VarChar(50)
-  email     String?   @unique @db.VarChar(100)
-  phone     String?   @db.VarChar(20)
-  avatar    String?   @db.VarChar(255)
-  status    Int       @default(1) // 1=active 0=disabled
-  deptId    Int?      @map("dept_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  dept        Dept?           @relation(fields: [deptId], references: [id])
-  roles       UserRole[]
-  permissions UserPermission[]
+  id          Int              @id @default(autoincrement())
+  username    String           @unique @db.VarChar(50)
+  password    String           @db.VarChar(255)
+  realName    String?          @map("real_name") @db.VarChar(50)
+  email       String?          @unique @db.VarChar(100)
+  phone       String?          @db.VarChar(20)
+  avatar      String?          @db.VarChar(255)
+  status      Int              @default(1)
+  deptId      Int?             @map("dept_id")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
   orders      Order[]
+  dept        Dept?            @relation(fields: [deptId], references: [id])
+  permissions UserPermission[]
+  roles       UserRole[]
 
   @@map("sys_user")
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique @db.VarChar(50)
-  code        String   @unique @db.VarChar(50)
-  description String?  @db.VarChar(255)
-  status      Int      @default(1)
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
-
-  users           UserRole[]
-  menus           RoleMenu[]
-  permissions     RolePermission[]
-  apiPerms        RoleApiPermission[]
-  fieldPerms      RoleFieldPermission[]
-  dataScope       DataScope?
+  id          Int                   @id @default(autoincrement())
+  name        String                @unique @db.VarChar(50)
+  code        String                @unique @db.VarChar(50)
+  description String?               @db.VarChar(255)
+  status      Int                   @default(1)
+  sortOrder   Int                   @default(0) @map("sort_order")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  deletedAt   DateTime?             @map("deleted_at")
+  dataScope   DataScope?
+  apiPerms    RoleApiPermission[]
+  fieldPerms  RoleFieldPermission[]
+  menus       RoleMenu[]
+  permissions RolePermission[]
+  users       UserRole[]
 
   @@map("sys_role")
 }
 
 model UserRole {
-  userId Int @map("user_id")
-  roleId Int @map("role_id")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  userId Int  @map("user_id")
+  roleId Int  @map("role_id")
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
   @@map("sys_user_role")
 }
 
-// ==================== Menu & Permission ====================
-
 model Menu {
-  id        Int      @id @default(autoincrement())
-  parentId  Int?     @map("parent_id")
-  name      String   @db.VarChar(100)
-  routeName String?  @map("route_name") @db.VarChar(100)
-  type      Int      @default(0) // 0=directory 1=menu 2=button
-  path      String?  @db.VarChar(200)
-  component String?  @db.VarChar(200)
-  redirect  String?  @db.VarChar(200)
-  icon      String?  @db.VarChar(100)
-  sortOrder Int      @default(0) @map("sort_order")
-  perms     String?  @db.VarChar(100) // button permission code
-  status    Int      @default(1)
-  keepAlive Int?     @default(1) @map("keep_alive")
-  show      Int      @default(1) // 0=hide in sidebar
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  parent      Menu?         @relation("MenuTree", fields: [parentId], references: [id])
-  children    Menu[]        @relation("MenuTree")
-  roles       RoleMenu[]
+  id          Int          @id @default(autoincrement())
+  parentId    Int?         @map("parent_id")
+  name        String       @db.VarChar(100)
+  type        Int          @default(0)
+  path        String?      @db.VarChar(200)
+  component   String?      @db.VarChar(200)
+  icon        String?      @db.VarChar(100)
+  sortOrder   Int          @default(0) @map("sort_order")
+  perms       String?      @db.VarChar(100)
+  status      Int          @default(1)
+  keepAlive   Int?         @default(1) @map("keep_alive")
+  show        Int          @default(1)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  deletedAt   DateTime?    @map("deleted_at")
+  redirect    String?      @db.VarChar(200)
+  routeName   String?      @map("route_name") @db.VarChar(100)
+  parent      Menu?        @relation("MenuTree", fields: [parentId], references: [id])
+  children    Menu[]       @relation("MenuTree")
   permissions Permission[]
+  roles       RoleMenu[]
 
   @@map("sys_menu")
 }
 
 model RoleMenu {
-  roleId Int @map("role_id")
-  menuId Int @map("menu_id")
-
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  roleId Int  @map("role_id")
+  menuId Int  @map("menu_id")
+  menu   Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, menuId])
   @@map("sys_role_menu")
 }
 
-// Permission codes (button-level)
 model Permission {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(100)
-  code      String   @unique @db.VarChar(100)
-  menuId    Int?     @map("menu_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  menu    Menu?             @relation(fields: [menuId], references: [id])
-  roles   RolePermission[]
-  users   UserPermission[]
+  id        Int              @id @default(autoincrement())
+  name      String           @db.VarChar(100)
+  code      String           @unique @db.VarChar(100)
+  menuId    Int?             @map("menu_id")
+  createdAt DateTime         @default(now()) @map("created_at")
+  menu      Menu?            @relation(fields: [menuId], references: [id])
+  roles     RolePermission[]
+  users     UserPermission[]
 
   @@map("sys_permission")
 }
 
 model UserPermission {
-  userId       Int @map("user_id")
-  permissionId Int @map("permission_id")
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  userId       Int        @map("user_id")
+  permissionId Int        @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, permissionId])
   @@map("sys_user_permission")
 }
 
 model RolePermission {
-  roleId       Int @map("role_id")
-  permissionId Int @map("permission_id")
-
-  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@map("sys_role_permission")
 }
 
-// API-level permissions
 model ApiPermission {
-  id        Int            @id @default(autoincrement())
-  name      String         @db.VarChar(100)
-  method    String         @db.VarChar(10) // GET, POST, PUT, DELETE
-  path      String         @db.VarChar(200)
-  createdAt DateTime       @default(now()) @map("created_at")
-
-  roles RoleApiPermission[]
+  id        Int                 @id @default(autoincrement())
+  name      String              @db.VarChar(100)
+  method    String              @db.VarChar(10)
+  path      String              @db.VarChar(200)
+  createdAt DateTime            @default(now()) @map("created_at")
+  roles     RoleApiPermission[]
 
   @@map("sys_api_permission")
 }
 
 model RoleApiPermission {
-  roleId          Int @map("role_id")
-  apiPermissionId Int @map("api_permission_id")
-
-  role          Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  apiPermission ApiPermission @relation(fields: [apiPermissionId], references: [id], onDelete: Cascade)
+  roleId          Int           @map("role_id")
+  apiPermissionId Int           @map("api_permission_id")
+  apiPermission   ApiPermission @relation(fields: [apiPermissionId], references: [id], onDelete: Cascade)
+  role            Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, apiPermissionId])
   @@map("sys_role_api_permission")
 }
 
-// Field-level permissions
 model FieldPermission {
-  id        Int                  @id @default(autoincrement())
-  tableName String               @map("table_name") @db.VarChar(100)
-  fieldName String               @map("field_name") @db.VarChar(100)
-  createdAt DateTime             @default(now()) @map("created_at")
-
-  roles RoleFieldPermission[]
+  id        Int                   @id @default(autoincrement())
+  tableName String                @map("table_name") @db.VarChar(100)
+  fieldName String                @map("field_name") @db.VarChar(100)
+  createdAt DateTime              @default(now()) @map("created_at")
+  roles     RoleFieldPermission[]
 
   @@unique([tableName, fieldName])
   @@map("sys_field_permission")
 }
 
 model RoleFieldPermission {
-  roleId            Int @map("role_id")
-  fieldPermissionId Int @map("field_permission_id")
-  readable          Int @default(1) // 1=readable 0=hidden
-
-  role            Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  fieldPermission FieldPermission @relation(fields: [fieldPermissionId], references: [id], onDelete: Cascade)
+  roleId            Int             @map("role_id")
+  fieldPermissionId Int             @map("field_permission_id")
+  readable          Int             @default(1)
+  fieldPermission   FieldPermission @relation(fields: [fieldPermissionId], references: [id], onDelete: Cascade)
+  role              Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, fieldPermissionId])
   @@map("sys_role_field_permission")
 }
 
-// Data scope
 model DataScope {
-  id            Int    @id @default(autoincrement())
-  roleId        Int    @unique @map("role_id")
-  scopeType     String @map("scope_type") @db.Char(1) // 1=self 2=dept 3=dept_sub 4=all 5=custom
-  customDeptIds String? @map("custom_dept_ids") // JSON array of dept IDs when scopeType=5
+  id            Int      @id @default(autoincrement())
+  roleId        Int      @unique @map("role_id")
+  scopeType     String   @map("scope_type") @db.Char(1)
+  customDeptIds String?  @map("custom_dept_ids")
   createdAt     DateTime @default(now()) @map("created_at")
-
-  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role          Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@map("sys_data_scope")
 }
-
-// ==================== Dept ====================
 
 model Dept {
   id        Int       @id @default(autoincrement())
@@ -213,45 +190,528 @@ model Dept {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
-
-  parent   Dept?  @relation("DeptTree", fields: [parentId], references: [id])
-  children Dept[] @relation("DeptTree")
-  users    User[]
+  parent    Dept?     @relation("DeptTree", fields: [parentId], references: [id])
+  children  Dept[]    @relation("DeptTree")
+  users     User[]
 
   @@map("sys_dept")
 }
-
-// ==================== Orders ====================
 
 model Order {
   id          Int       @id @default(autoincrement())
   orderNo     String    @unique @map("order_no") @db.VarChar(50)
   userId      Int?      @map("user_id")
   totalAmount Decimal   @map("total_amount") @db.Decimal(10, 2)
-  status      String    @default("pending") @db.VarChar(20) // pending, processing, completed, cancelled
+  status      String    @default("pending") @db.VarChar(20)
   remark      String?   @db.VarChar(500)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
-
-  user User? @relation(fields: [userId], references: [id])
+  user        User?     @relation(fields: [userId], references: [id])
 
   @@map("sys_order")
 }
 
-// ==================== Article / CMS ====================
-
 model Article {
-  id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(200)
-  content   String   @db.Text
-  summary   String?  @db.VarChar(500)
-  coverUrl  String?  @map("cover_url") @db.VarChar(500)
-  tags      String?  @db.VarChar(200)
-  status    String   @default("draft") // draft | published | archived
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(200)
+  content     String
+  summary     String?   @db.VarChar(500)
+  coverUrl    String?   @map("cover_url") @db.VarChar(500)
+  tags        String?   @db.VarChar(200)
+  status      String    @default("draft")
   publishedAt DateTime? @map("published_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("cms_article")
+}
+
+model biz_aigc_task {
+  id              Int       @id @default(autoincrement())
+  member_id       Int?
+  type            String    @db.VarChar(30)
+  prompt          String?
+  negative_prompt String?
+  image_url       String?   @db.VarChar(500)
+  video_url       String?   @db.VarChar(500)
+  status          String    @default("pending") @db.VarChar(20)
+  progress        Int       @default(0)
+  config          Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+}
+
+model biz_app_tool {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(200)
+  description String?
+  icon        String?   @db.VarChar(500)
+  type        String    @db.VarChar(50)
+  config      Json?
+  sort_order  Int       @default(0)
+  status      Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_baokuan_task {
+  id         Int       @id @default(autoincrement())
+  keyword    String?   @db.VarChar(500)
+  douyin_url String?   @db.VarChar(500)
+  video_url  String?   @db.VarChar(500)
+  cover_url  String?   @db.VarChar(500)
+  title      String?
+  author     String?   @db.VarChar(200)
+  status     String    @default("pending") @db.VarChar(20)
+  result     Json?
+  task_type  String    @default("search") @db.VarChar(30)
+  member_id  Int?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model biz_baokuan_text {
+  id             Int       @id @default(autoincrement())
+  task_id        Int?
+  content        String
+  origin_text    String?
+  analyse_result Json?
+  status         String    @default("pending") @db.VarChar(20)
+  member_id      Int?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+}
+
+model biz_batch_video_audio {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  url                  String               @db.VarChar(500)
+  name                 String?              @db.VarChar(200)
+  duration             Int?                 @default(0)
+  file_size            Int?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_material {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  url                  String               @db.VarChar(500)
+  name                 String?              @db.VarChar(200)
+  type                 String               @db.VarChar(30)
+  file_size            Int?
+  duration             Int?                 @default(0)
+  sort_order           Int                  @default(0)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_result {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  video_url            String?              @db.VarChar(500)
+  cover_url            String?              @db.VarChar(500)
+  file_size            Int?
+  duration             Int?                 @default(0)
+  status               String?              @default("pending") @db.VarChar(20)
+  error_msg            String?              @db.VarChar(500)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_style {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  style_id             String               @db.VarChar(100)
+  name                 String?              @db.VarChar(200)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_task {
+  id                         Int                          @id @default(autoincrement())
+  name                       String?                      @db.VarChar(200)
+  status                     String                       @default("draft") @db.VarChar(30)
+  progress                   Int                          @default(0)
+  task_type                  String?                      @db.VarChar(50)
+  member_id                  Int?
+  remark                     String?                      @db.VarChar(500)
+  total_count                Int                          @default(0)
+  success_count              Int                          @default(0)
+  fail_count                 Int                          @default(0)
+  generate_at                DateTime?
+  submitted_at               DateTime?
+  createdAt                 DateTime                     @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+  deletedAt                 DateTime? @map("deleted_at")
+  biz_batch_video_audio      biz_batch_video_audio[]
+  biz_batch_video_material   biz_batch_video_material[]
+  biz_batch_video_result     biz_batch_video_result[]
+  biz_batch_video_style      biz_batch_video_style[]
+  biz_batch_video_template   biz_batch_video_template[]
+  biz_batch_video_text       biz_batch_video_text[]
+  biz_batch_video_virtualman biz_batch_video_virtualman[]
+}
+
+model biz_batch_video_template {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  template_id          String               @db.VarChar(100)
+  version              String?              @db.VarChar(50)
+  name                 String?              @db.VarChar(200)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_text {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  content              String
+  sort_order           Int                  @default(0)
+  status               String?              @default("pending") @db.VarChar(20)
+  remark               String?              @db.VarChar(500)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_batch_video_virtualman {
+  id                   Int                  @id @default(autoincrement())
+  task_id              Int
+  virtualman_id        String               @db.VarChar(100)
+  version              String?              @db.VarChar(50)
+  name                 String?              @db.VarChar(200)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  biz_batch_video_task biz_batch_video_task @relation(fields: [task_id], references: [id], onDelete: Cascade)
+}
+
+model biz_channel {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(200)
+  cover_url            String?                @db.VarChar(500)
+  description          String?
+  category_id          Int?
+  status               String                 @default("active") @db.VarChar(20)
+  is_public            Int                    @default(1)
+  member_id            Int?
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
+  biz_channel_material biz_channel_material[]
+  biz_channel_text     biz_channel_text[]
+  biz_channel_user     biz_channel_user[]
+}
+
+model biz_channel_material {
+  id          Int         @id @default(autoincrement())
+  channel_id  Int
+  url         String      @db.VarChar(500)
+  name        String?     @db.VarChar(200)
+  type        String      @db.VarChar(30)
+  file_size   Int?
+  createdAt  DateTime    @default(now()) @map("created_at")
+  biz_channel biz_channel @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+}
+
+model biz_channel_text {
+  id          Int         @id @default(autoincrement())
+  channel_id  Int
+  title       String?     @db.VarChar(200)
+  content     String
+  sort_order  Int         @default(0)
+  status      String      @default("active") @db.VarChar(20)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  biz_channel biz_channel @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+}
+
+model biz_channel_user {
+  id          Int         @id @default(autoincrement())
+  channel_id  Int
+  member_id   Int
+  role        String      @default("member") @db.VarChar(20)
+  status      String      @default("active") @db.VarChar(20)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  biz_channel biz_channel @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+
+  @@unique([channel_id, member_id])
+}
+
+model biz_credit_goods {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(200)
+  description String?
+  cover_url   String?   @db.VarChar(500)
+  price       Int       @default(0)
+  stock       Int       @default(0)
+  type        String    @default("virtual") @db.VarChar(30)
+  status      Int       @default(1)
+  sort_order  Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_credit_order {
+  id          Int       @id @default(autoincrement())
+  order_no    String    @unique @db.VarChar(50)
+  goods_id    Int?
+  member_id   Int?
+  quantity    Int       @default(1)
+  total_price Int       @default(0)
+  status      String    @default("pending") @db.VarChar(20)
+  remark      String?   @db.VarChar(500)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_music_category {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  module     String    @default("music") @db.VarChar(50)
+  icon       String?   @db.VarChar(255)
+  sort_order Int       @default(0)
+  status     Int       @default(1)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model biz_poster {
+  id          Int       @id @default(autoincrement())
+  member_id   Int?
+  title       String?   @db.VarChar(200)
+  template_id String?   @db.VarChar(100)
+  image_url   String?   @db.VarChar(500)
+  config      Json?
+  status      String    @default("pending") @db.VarChar(20)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_text_variation {
+  id         Int      @id @default(autoincrement())
+  member_id  Int?
+  content    String
+  variates   Json?
+  rewrite    String?
+  replace    String?
+  status     String   @default("pending") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model biz_trend {
+  id         Int       @id @default(autoincrement())
+  member_id  Int?
+  content    String?
+  images     Json?
+  voice_url  String?   @db.VarChar(500)
+  status     String    @default("active") @db.VarChar(20)
+  like_count Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model biz_user_creation {
+  id         Int       @id @default(autoincrement())
+  member_id  Int?
+  title      String?   @db.VarChar(200)
+  content    String?
+  type       String?   @db.VarChar(30)
+  result_url String?   @db.VarChar(500)
+  cover_url  String?   @db.VarChar(500)
+  config     Json?
+  credits    Int?      @default(0)
+  status     String    @default("pending") @db.VarChar(20)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model biz_user_material {
+  id                      Int                      @id @default(autoincrement())
+  member_id               Int?
+  group_id                Int?
+  name                    String?                  @db.VarChar(200)
+  url                     String                   @db.VarChar(500)
+  type                    String                   @db.VarChar(30)
+  file_size               Int?
+  duration                Int?                     @default(0)
+  status                  String                   @default("active") @db.VarChar(20)
+  audit_status            String?                  @db.VarChar(20)
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  deletedAt              DateTime? @map("deleted_at")
+  biz_user_material_group biz_user_material_group? @relation(fields: [group_id], references: [id])
+}
+
+model biz_user_material_group {
+  id                Int                 @id @default(autoincrement())
+  member_id         Int?
+  name              String              @db.VarChar(100)
+  parent_id         Int?
+  sort_order        Int                 @default(0)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  biz_user_material biz_user_material[]
+}
+
+model biz_user_music {
+  id          Int       @id @default(autoincrement())
+  member_id   Int?
+  name        String    @db.VarChar(200)
+  category_id Int?
+  url         String?   @db.VarChar(500)
+  cover_url   String?   @db.VarChar(500)
+  duration    Int?      @default(0)
+  file_size   Int?
+  status      Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_user_preview_template {
+  id          Int       @id @default(autoincrement())
+  member_id   Int?
+  name        String    @db.VarChar(200)
+  template_id String?   @db.VarChar(100)
+  config      Json?
+  status      Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_video_template {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(200)
+  cover_url   String?   @db.VarChar(500)
+  description String?
+  category_id Int?
+  config      Json?
+  status      Int       @default(1)
+  sort_order  Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+}
+
+model biz_virtual_man {
+  id         Int       @id @default(autoincrement())
+  member_id  Int?
+  name       String    @db.VarChar(200)
+  avatar     String?   @db.VarChar(500)
+  video_url  String?   @db.VarChar(500)
+  cover_url  String?   @db.VarChar(500)
+  status     String    @default("pending") @db.VarChar(20)
+  version    String?   @db.VarChar(50)
+  config     Json?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model biz_voice {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(200)
+  language   String?   @default("zh") @db.VarChar(20)
+  type       String?   @default("common") @db.VarChar(30)
+  cover_url  String?   @db.VarChar(500)
+  audio_url  String?   @db.VarChar(500)
+  status     Int       @default(1)
+  sort_order Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+}
+
+model mem_ems {
+  id         Int      @id @default(autoincrement())
+  event      String   @db.VarChar(30)
+  email      String   @db.VarChar(100)
+  code       String   @db.VarChar(10)
+  times      Int      @default(0)
+  ip         String?  @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model mem_group {
+  id         Int          @id @default(autoincrement())
+  name       String       @db.VarChar(50)
+  status     String       @default("normal") @db.VarChar(30)
+  sort_order Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+  mem_member mem_member[]
+}
+
+model mem_member {
+  id                 Int       @id @default(autoincrement())
+  group_id           Int       @default(1)
+  username           String?   @unique @db.VarChar(32)
+  nickname           String?   @db.VarChar(50)
+  password           String?   @db.VarChar(255)
+  email              String?   @db.VarChar(100)
+  mobile             String?   @db.VarChar(11)
+  avatar             String?   @db.VarChar(255)
+  level              Int       @default(0)
+  gender             Int       @default(0)
+  birthday           DateTime? @db.Date
+  bio                String?   @db.VarChar(100)
+  money              Decimal   @default(0) @db.Decimal(10, 2)
+  score              Int       @default(0)
+  successions        Int       @default(1)
+  maxsuccessions     Int       @default(1)
+  prev_time          DateTime?
+  login_time         DateTime?
+  loginip            String?   @db.VarChar(50)
+  login_failure      Int       @default(0)
+  login_failure_time DateTime?
+  joinip             String?   @db.VarChar(50)
+  join_time          DateTime?
+  status             String    @default("normal") @db.VarChar(30)
+  verification       String?   @db.VarChar(255)
+  openid             String?   @unique @db.VarChar(100)
+  unionid            String?   @db.VarChar(100)
+  mini_openid        String?   @unique @db.VarChar(100)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+  mem_group          mem_group @relation(fields: [group_id], references: [id])
+}
+
+model mem_sms {
+  id         Int      @id @default(autoincrement())
+  event      String   @db.VarChar(30)
+  mobile     String   @db.VarChar(20)
+  code       String   @db.VarChar(10)
+  times      Int      @default(0)
+  ip         String?  @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model sys_config {
+  id            Int      @id @default(autoincrement())
+  group         String   @default("basic") @db.VarChar(100)
+  group_sort    Int      @default(0)
+  key           String   @unique @db.VarChar(100)
+  label         String   @db.VarChar(200)
+  value         Json?
+  default_value Json?
+  type          String   @default("string") @db.VarChar(50)
+  sort_order    Int      @default(0)
+  placeholder   String?  @db.VarChar(500)
+  remark        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 }
