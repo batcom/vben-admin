@@ -96,6 +96,16 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     errorMessageResponseInterceptor((msg: string, error) => {
       // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       // 当前mock接口返回的错误字段是 error 或者 message
+
+      // 跳过 /config/site 的错误提示。该接口是登录页首次加载时调用，
+      // 调用方（auth.vue / login.vue）已有 try/catch 兜底，失败会静默回退到默认值。
+      // 首次请求成功率低的原因是：Windows 重启后的首次 TCP 连接经过 Vite
+      // proxy 到 localhost:3002 可能因连接建立失败而无响应体——不属于后端逻辑错误。
+      const url = error?.config?.url ?? '';
+      if (url === '/config/site') {
+        return;
+      }
+
       const responseData = error?.response?.data ?? {};
       const errorMessage = responseData?.error ?? responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示

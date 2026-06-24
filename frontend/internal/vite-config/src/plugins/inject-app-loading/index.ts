@@ -17,6 +17,11 @@ async function viteInjectAppLoadingPlugin(
   loadingTemplate = 'loading.html',
 ): Promise<PluginOption | undefined> {
   const loadingHtml = await getLoadingRawByHtmlTemplate(loadingTemplate);
+
+  if (!loadingHtml) {
+    return;
+  }
+
   const { version } = await readPackageJSON(process.cwd());
   const envRaw = isBuild ? 'prod' : 'dev';
   const cacheName = `'${env.VITE_APP_NAMESPACE}-${version}-${envRaw}-preferences-theme'`;
@@ -30,9 +35,30 @@ async function viteInjectAppLoadingPlugin(
 </script>
 `;
 
-  if (!loadingHtml) {
-    return;
-  }
+  // 从环境变量读取 loading 配置
+  const loadingConfig = {
+    title: env.VITE_LOADING_TITLE || env.VITE_APP_TITLE || 'Vben Admin',
+    logo: env.VITE_LOADING_LOGO || '',
+    animation: env.VITE_LOADING_ANIMATION || 'bounce',
+    description: env.VITE_LOADING_DESCRIPTION || '',
+  };
+
+  // 替换模板中的占位符
+  const processedHtml = loadingHtml
+    .replace(/%VITE_LOADING_TITLE%/g, loadingConfig.title)
+    .replace(
+      /%VITE_LOADING_LOGO%/g,
+      loadingConfig.logo
+        ? `<img class="loading-logo" src="${loadingConfig.logo}" alt="logo" />`
+        : '',
+    )
+    .replace(/%VITE_LOADING_ANIMATION%/g, loadingConfig.animation)
+    .replace(
+      /%VITE_LOADING_DESCRIPTION%/g,
+      loadingConfig.description
+        ? `<div class="loading-description">${loadingConfig.description}</div>`
+        : '',
+    );
 
   return {
     enforce: 'pre',
@@ -40,7 +66,7 @@ async function viteInjectAppLoadingPlugin(
     transformIndexHtml: {
       handler(html) {
         const re = /<body\s*>/;
-        html = html.replace(re, `<body>${injectScript}${loadingHtml}`);
+        html = html.replace(re, `<body>${injectScript}${processedHtml}`);
         return html;
       },
       order: 'pre',
