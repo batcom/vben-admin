@@ -43,6 +43,25 @@
     color: #fff;
   }
 
+  /* ===== Logo ===== */
+  .loading-logo {
+    display: block;
+    max-width: 120px;
+    max-height: 120px;
+    margin-bottom: 20px;
+  }
+
+  /* ===== 副标题 ===== */
+  .loading-description {
+    margin-top: 12px;
+    font-size: 14px;
+    color: rgb(0 0 0 / 45%);
+  }
+  .dark .loading-description {
+    color: rgb(255 255 255 / 45%);
+  }
+
+  /* ===== 动画：bounce（默认） ===== */
   .loader {
     position: relative;
     width: 48px;
@@ -106,8 +125,77 @@
       transform: scale(1.2, 1);
     }
   }
+
+  /* ===== 动画：dots（四角圆点旋转） ===== */
+  .loading-animation-dots {
+    position: relative;
+    box-sizing: border-box;
+    display: inline-block;
+    width: 48px;
+    height: 48px;
+    margin-top: 30px;
+    font-size: 32px;
+    transform: rotate(45deg);
+    animation: rotate-ani 1.2s infinite linear;
+  }
+
+  .loading-animation-dots i {
+    position: absolute;
+    display: block;
+    width: 20px;
+    height: 20px;
+    background-color: hsl(var(--primary, 210 100% 50%));
+    border-radius: 100%;
+    opacity: 0.3;
+    transform: scale(0.75);
+    transform-origin: 50% 50%;
+    animation: spin-move-ani 1s infinite linear alternate;
+  }
+
+  .loading-animation-dots i:nth-child(1) { top: 0; left: 0; }
+  .loading-animation-dots i:nth-child(2) { top: 0; right: 0; animation-delay: 0.4s; }
+  .loading-animation-dots i:nth-child(3) { right: 0; bottom: 0; animation-delay: 0.8s; }
+  .loading-animation-dots i:nth-child(4) { bottom: 0; left: 0; animation-delay: 1.2s; }
+
+  @keyframes rotate-ani {
+    to { transform: rotate(405deg); }
+  }
+
+  @keyframes spin-move-ani {
+    to { opacity: 1; }
+  }
+
+  /* ===== 动画：spinner（旋转圆环） ===== */
+  .loading-animation-spinner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    border: 5px solid hsl(var(--primary, 210 100% 50%) / 20%);
+    border-top-color: hsl(var(--primary, 210 100% 50%));
+    border-radius: 50%;
+    animation: spinner-rotate 0.8s linear infinite;
+    box-sizing: border-box;
+  }
+
+  @keyframes spinner-rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ===== 无动画 ===== */
+  .loading-animation-none {
+    display: none;
+  }
 </style>
 <div class="loading" id="__app-loading__">
-  <div class="loader"></div>
-  <div class="title">%VITE_APP_TITLE%</div>
+  <!-- Logo（由插件动态替换，空值时不渲染） -->
+  %VITE_LOADING_LOGO%
+
+  <!-- 动画区域：CSS class 由占位符控制 -->
+  <div class="loader loading-animation-%VITE_LOADING_ANIMATION%"></div>
+
+  <!-- 标题 -->
+  <div class="title">%VITE_LOADING_TITLE%</div>
+
+  <!-- 副标题（由插件动态替换，空值时不渲染） -->
+  %VITE_LOADING_DESCRIPTION%
 </div>
