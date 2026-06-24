@@ -1,16 +1,37 @@
 import { requestClient } from '#/api/request';
 
+export interface SysConfigItem {
+  id: number;
+  group: string;
+  group_sort: number;
+  key: string;
+  label: string;
+  value: any;
+  default_value: any;
+  type: string;
+  sort_order: number;
+  placeholder: string;
+  remark: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConfigGroup {
+  key: string;
+  label: string;
+  sort: number;
+  items: SysConfigItem[];
+}
+
 export async function getSystemConfigListApi(params?: any) {
   return requestClient.get('/admin/sys_config', { params });
 }
 
 export async function getSystemConfigGroupedApi() {
-  // Fetch all configs (no pagination) and group by `group` on the frontend
   const result = await requestClient.get('/admin/sys_config', {
     params: { pageSize: 200 },
   });
-  // Group and sort by group_sort
-  const groups: Record<string, { label: string; items: any[]; sort: number }> = {};
+  const groups: Record<string, { label: string; items: SysConfigItem[]; sort: number }> = {};
   for (const item of result.items) {
     const g = item.group || 'basic';
     if (!groups[g]) {
@@ -23,19 +44,35 @@ export async function getSystemConfigGroupedApi() {
     .map(([key, val]) => ({
       key,
       label: CONFIG_GROUP_LABELS[key] || key,
+      sort: val.sort,
       items: val.items.sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     }));
+}
+
+export async function createSystemConfigApi(data: any) {
+  return requestClient.post('/admin/sys_config', data);
 }
 
 export async function updateSystemConfigApi(id: number, data: any) {
   return requestClient.put('/admin/sys_config/' + id, data);
 }
 
-export async function getSystemConfigDetailApi(id: number) {
-  return requestClient.get('/admin/sys_config/' + id);
+export async function deleteSystemConfigApi(id: number) {
+  return requestClient.delete('/admin/sys_config/' + id);
 }
 
-const CONFIG_GROUP_LABELS: Record<string, string> = {
+export const CONFIG_TYPE_OPTIONS = [
+  { value: 'string', label: '文本 (string)' },
+  { value: 'number', label: '数字 (number)' },
+  { value: 'boolean', label: '开关 (boolean)' },
+  { value: 'textarea', label: '多行文本 (textarea)' },
+  { value: 'json', label: 'JSON (json)' },
+  { value: 'array', label: '数组 (array)' },
+  { value: 'dict', label: '键值字典 (dict)' },
+  { value: 'kv2d', label: '二维键值表 (kv2d)' },
+];
+
+export const CONFIG_GROUP_LABELS: Record<string, string> = {
   basic: '基本设置',
   app_user_material: '素材设置',
   app_creation: '创作设置',
