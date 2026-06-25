@@ -41,7 +41,15 @@ const routes: RouteRecordRaw[] = [
     },
     name: 'SystemAdmin',
     path: '/system',
-    children: entities.filter((e) => e.path.startsWith('/system')).map((e) => crud(e.path, e.entity, e.meta)),
+    children: [
+      ...entities.filter((e) => e.path.startsWith('/system')).map((e) => crud(e.path, e.entity, e.meta)),
+      {
+        name: 'SystemConfig',
+        path: '/system/config',
+        component: () => import('#/views/system/config/index.vue'),
+        meta: { icon: 'lucide:settings', title: '系统配置' },
+      },
+    ],
   },
   {
     meta: {
