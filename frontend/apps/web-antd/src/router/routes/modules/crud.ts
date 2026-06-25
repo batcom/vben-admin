@@ -30,19 +30,37 @@ const entities: Array<{ path: string; entity: string; meta: Record<string, any> 
   { path: '/cms/article', entity: 'article', meta: { icon: 'lucide:file-text', title: '文章管理' } },
 ];
 
-// Wrap in a parent route for proper path resolution (no meta = no sidebar menu)
+// Wrap in a parent route for sidebar grouping
 const routes: RouteRecordRaw[] = [
   {
+    meta: {
+      icon: 'lucide:database',
+      keepAlive: true,
+      order: 200,
+      title: '系统管理',
+    },
     name: 'SystemAdmin',
     path: '/system',
     children: entities.filter((e) => e.path.startsWith('/system')).map((e) => crud(e.path, e.entity, e.meta)),
   },
   {
+    meta: {
+      icon: 'lucide:shopping-cart',
+      keepAlive: true,
+      order: 300,
+      title: '订单管理',
+    },
     name: 'OrderMgmt',
     path: '/order',
     children: entities.filter((e) => e.path.startsWith('/order')).map((e) => crud(e.path, e.entity, e.meta)),
   },
   {
+    meta: {
+      icon: 'lucide:file-text',
+      keepAlive: true,
+      order: 400,
+      title: '内容管理',
+    },
     name: 'CmsMgmt',
     path: '/cms',
     children: entities.filter((e) => e.path.startsWith('/cms')).map((e) => crud(e.path, e.entity, e.meta)),
