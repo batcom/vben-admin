@@ -10,6 +10,7 @@ import {
   deleteSystemConfigApi,
   CONFIG_TYPE_OPTIONS,
 } from './api';
+import { refreshSiteConfig } from '#/utils/refresh-site-config';
 
 const groups = ref<Array<{ key: string; label: string; sort: number; items: SysConfigItem[] }>>([]);
 const loading = ref(false);
@@ -69,13 +70,14 @@ async function saveItem(item: SysConfigItem) {
       try { val = JSON.parse(val); } catch { message.error('JSON 格式不正确'); useJson.value[item.id] = true; return; }
     }
     await updateSystemConfigApi(item.id, { value: val });
+    refreshSiteConfig(); // 更新站点头部、版权等显示
     message.success('已保存'); useJson.value[item.id] = false;
   } catch { message.error('保存失败'); } finally { delete saving.value[item.id]; }
 }
 
 async function deleteItem(item: SysConfigItem) {
   if (!confirm(`删除「${item.key}」？`)) return;
-  try { await deleteSystemConfigApi(item.id); await loadData(); } catch { message.error('删除失败'); }
+  try { await deleteSystemConfigApi(item.id); await loadData(); refreshSiteConfig(); } catch { message.error('删除失败'); }
 }
 
 function showAddForm() {
@@ -92,7 +94,7 @@ async function submitAdd() {
     else if (f.type === 'boolean') val = val === true || val === 'true';
     else if (['json', 'array', 'dict', 'kv2d'].includes(f.type) && typeof val === 'string') { try { val = JSON.parse(val); } catch { message.error('JSON 格式不正确'); return; } }
     await createSystemConfigApi({ group: f.group, key: f.name, label: f.title || f.name, type: f.type, value: val, placeholder: f.tip || null, remark: f.rule || null });
-    message.success('创建成功'); addFormTab.value = false; await loadData();
+    message.success('创建成功'); addFormTab.value = false; await loadData(); refreshSiteConfig();
   } catch { message.error('创建失败'); } finally { addSaving.value = false; }
 }
 
@@ -250,7 +252,7 @@ function rmTag(item: SysConfigItem, i: number) { if (Array.isArray(item.value)) 
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center gap-2 mt-3">
+      <div class="flex items-center justify-end gap-2 mt-3">
         <button class="px-4 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors" @click="showAddForm">新增</button>
         <button class="px-4 py-1.5 text-sm border border-border rounded hover:border-blue-300 transition-colors bg-card">重置</button>
       </div>

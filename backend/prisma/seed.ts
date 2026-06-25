@@ -21,6 +21,9 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.role.deleteMany();
   await prisma.dept.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.article.deleteMany();
+  await prisma.sys_config.deleteMany();
 
   // ---------- Departments ----------
   const deptRoot = await prisma.dept.create({ data: { name: '总公司', sortOrder: 1 } });
@@ -208,6 +211,37 @@ async function main() {
 
   console.log('Seed completed successfully!');
   console.log('Accounts: vben/123456, admin/123456, jack/123456');
+
+  // ---------- Site Config ----------
+  const siteConfigs = [
+    { group: 'basic', key: 'site_name',             label: '网站名称',               value: 'Vben Admin',  type: 'string', sort_order: 1 },
+    { group: 'basic', key: 'site_description',       label: '网站描述',               value: '一个现代化的后台管理系统', type: 'string', sort_order: 2 },
+    { group: 'basic', key: 'site_logo_url',          label: 'Logo 地址',              value: '',             type: 'string', sort_order: 3, placeholder: '留空使用默认 Logo' },
+    { group: 'basic', key: 'site_default_avatar',    label: '默认头像',               value: '',             type: 'string', sort_order: 4 },
+    { group: 'basic', key: 'site_icp',               label: 'ICP 备案号',             value: '',             type: 'string', sort_order: 5 },
+    { group: 'copyright', key: 'copyright_company',   label: '版权公司名',              value: 'Vben',         type: 'string', sort_order: 1 },
+    { group: 'copyright', key: 'copyright_date',       label: '版权年份',               value: '2026',         type: 'string', sort_order: 2 },
+    { group: 'copyright', key: 'copyright_enable',     label: '版权显示开关',            value: true,           type: 'boolean', sort_order: 3 },
+    { group: 'copyright', key: 'copyright_icp',        label: '版权备案号',              value: '',             type: 'string', sort_order: 4 },
+    { group: 'copyright', key: 'copyright_site_link',  label: '版权公司链接',            value: '',             type: 'string', sort_order: 5, placeholder: '留空不显示链接' },
+    { group: 'login', key: 'login_show_code_login',        label: '验证码登录',      value: true,  type: 'boolean', sort_order: 1 },
+    { group: 'login', key: 'login_show_forget_password',   label: '忘记密码',        value: true,  type: 'boolean', sort_order: 2 },
+    { group: 'login', key: 'login_show_qrcode_login',      label: '二维码登录',      value: true,  type: 'boolean', sort_order: 3 },
+    { group: 'login', key: 'login_show_register',          label: '注册',            value: true,  type: 'boolean', sort_order: 4 },
+    { group: 'login', key: 'login_show_remember_me',       label: '记住我',          value: true,  type: 'boolean', sort_order: 5 },
+    { group: 'login', key: 'login_show_role_selector',     label: '角色选择器',      value: false, type: 'boolean', sort_order: 6 },
+    { group: 'login', key: 'login_show_slider_captcha',    label: '滑块验证码',      value: false, type: 'boolean', sort_order: 7 },
+    { group: 'login', key: 'login_show_third_party',       label: '第三方登录',      value: false, type: 'boolean', sort_order: 8 },
+  ];
+
+  for (const cfg of siteConfigs) {
+    await prisma.sys_config.upsert({
+      where: { key: cfg.key },
+      create: cfg,
+      update: cfg,
+    });
+  }
+  console.log(`Seeded ${siteConfigs.length} site config items`);
 
   // ---------- Articles ----------
 

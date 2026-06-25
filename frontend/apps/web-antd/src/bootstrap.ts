@@ -71,6 +71,10 @@ async function bootstrap(namespace: string) {
   });
 
   app.mount('#app');
+
+  // 从后端加载站点配置，更新标题、Logo、版权到 preferences
+  const { refreshSiteConfig } = await import('#/utils/refresh-site-config');
+  refreshSiteConfig();
 }
 
 export { bootstrap };
