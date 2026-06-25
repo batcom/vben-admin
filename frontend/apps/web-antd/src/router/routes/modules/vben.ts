@@ -13,6 +13,16 @@ const routes: RouteRecordRaw[] = [
       title: $t('page.auth.profile'),
     },
   },
+  {
+    name: 'SystemConfig',
+    path: '/system/config',
+    component: () => import('#/views/system/config/index.vue'),
+    meta: {
+      icon: 'lucide:settings',
+      title: '系统配置',
+      hideInMenu: true, // 菜单由后端 menu 表控制
+    },
+  },
 ];
 
 export default routes;
